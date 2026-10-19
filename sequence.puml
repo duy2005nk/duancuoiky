@@ -1,0 +1,21 @@
+@startuml
+actor Client
+participant "Controller" as C
+participant "Service" as S
+participant "Repository" as R
+database "DB" as DB
+
+Client -> C: POST /api/v1/orders (company_id, items)
+C -> S: createOrder(company_id, items)
+S -> R: getPrice(company_id, product_id)
+R -> DB: SELECT price FROM PRICE_LIST
+DB --> R: price
+R --> S: price
+S -> S: Check Cut-off time (18:00) & Calculate Total
+S -> R: saveOrder(data)
+R -> DB: INSERT INTO ORDER & ORDER_DETAIL
+DB --> R: order_id
+R --> S: success
+S --> C: JSON Response (201 or 202)
+C --> Client: Trả kết quả
+@enduml

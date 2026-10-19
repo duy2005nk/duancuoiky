@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  title: B2B Order Management API - HKD Trịnh Văn Hùng
+  version: 1.0.0
+  description: API phục vụ hệ thống đặt hàng thực phẩm cho các nhà ăn công ty.
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development Server (PHP Built-in Server)
+
+paths:
+  /orders:
+    post:
+      summary: Tạo đơn đặt hàng mới cho ngày T+1
+      description: Nhận thông tin từ Frontend, kiểm tra giờ Cut-off (18:00) và lưu vào Database.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - company_id
+                - items
+              properties:
+                company_id:
+                  type: integer
+                  example: 1
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - product_id
+                      - quantity
+                    properties:
+                      product_id:
+                        type: integer
+                        example: 1
+                      quantity:
+                        type: number
+                        format: float
+                        example: 25.5
+      responses:
+        '201':
+          description: Đặt hàng thành công (Trạng thái APPROVED nếu trước 18:00)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreated'
+        '202':
+          description: Đơn hàng ở trạng thái chờ duyệt (Do đặt sau 18:00 cần Vendor thủ công duyệt)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPending'
+        '422':
+          description: Thông tin đặt hàng không hợp lệ hoặc thiếu bảng giá
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Lỗi máy chủ không thể tạo đơn hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    OrderCreated:
+      type: object
+      required: [success, message, order_id, status, total_amount]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Đơn hàng đã được tạo thành công.
+        order_id:
+          type: integer
+          minimum: 1
+          example: 128
+        status:
+          type: string
+          enum: [APPROVED]
+          example: "APPROVED"
+        total_amount:
+          type: number
+          format: float
+          example: 765000
+          
+    OrderPending:
+      type: object
+      required: [success, message, order_id, status, total_amount]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Đơn hàng đã được ghi nhận và đang chờ duyệt do đặt sau 18:00.
+        order_id:
+          type: integer
+          minimum: 1
+          example: 129
+        status:
+          type: string
+          enum: [PENDING_APPROVAL]
+          example: "PENDING_APPROVAL"
+        total_amount:
+          type: number
+          format: float
+          example: 765000
+          
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Số lượng sản phẩm hoặc mã công ty không hợp lệ.
+        detail:
+          type: string
+          example: Chưa có bảng giá cho sản phẩm này tại thời điểm hiện tại.

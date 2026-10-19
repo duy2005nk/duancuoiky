@@ -1,0 +1,26 @@
+erDiagram
+    REGION ||--o{ COMPANY : "has"
+    COMPANY ||--o{ PRICE_LIST : "has pricing"
+    PRODUCT ||--o{ PRICE_LIST : "priced at"
+    COMPANY ||--o{ ORDER : "places"
+    ORDER ||--|{ ORDER_DETAIL : "contains"
+    PRODUCT ||--o{ ORDER_DETAIL : "included in"
+
+    COMPANY {
+        int id PK
+        int region_id FK
+        string name
+    }
+    PRODUCT {
+        int id PK
+        string unit
+    }
+    PRICE_LIST {
+        int id PK
+        decimal price
+        date valid_from
+    }
+    ORDER_DETAIL {
+        decimal quantity
+        decimal applied_price
+    }
