@@ -1,0 +1,44 @@
+services:
+  # 1. Container Cơ sở dữ liệu PostgreSQL
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: trinhvanhung_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: trinhvanhung_b2b
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - b2b-network
+
+  # 2. Container PHP App (Đã được đóng gói chuẩn chỉnh qua Dockerfile)
+  php_app:
+    build: .
+    container_name: trinhvanhung_php
+    environment:
+      - DB_HOST=postgres_db
+      - DB_PORT=5432
+      - DB_NAME=trinhvanhung_b2b
+      - DB_USER=postgres
+      - DB_PASS=secretpassword
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "8000:8000"
+    working_dir: /var/www/html
+    command: php -S 0.0.0.0:8000 -t public public/index.php
+    depends_on:
+      - postgres_db
+    networks:
+      - b2b-network
+
+volumes:
+  pgdata:
+
+networks:
+  b2b-network:
+    driver: bridge

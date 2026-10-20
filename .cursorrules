@@ -1,0 +1,9 @@
+# BACKEND ARCHITECTURE RULES - PURE PHP
+1. Language: PHP 8+, thuần, không dùng Framework (Laravel/CI). Sử dụng Composer để Autoload (PSR-4) với namespace `App\`.
+2. Pattern: Clean Architecture.
+   - public/index.php (Front Controller nhận mọi Request).
+   - src/Controllers (Xử lý request/response JSON).
+   - src/Services (Chứa business logic).
+   - src/Repositories (Tương tác Database).
+3. Database: Sử dụng PDO với Prepared Statements (chống SQL Injection). Hệ quản trị: PostgreSQL (hoặc MySQL).
+4. Data Types: Tính toán tiền tệ dùng biến float, làm tròn 2 chữ số thập phân (`round($val, 2)`).
