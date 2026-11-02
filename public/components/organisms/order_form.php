@@ -7,43 +7,62 @@ require_once __DIR__ . '/../molecules/alert_box.php';
 
 function renderPageHeader(): void
 {
-    echo '<header class="border-b border-[#263d32] bg-[#18392b] text-[#fffdf5]">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-5">
-            <div class="flex items-center gap-3">
-                <div class="grid h-11 w-11 shrink-0 place-items-center border border-[#8fb39e] text-lg font-bold">H</div>
-                <div>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-[#b9d0c2]">Phiếu đặt hàng</p>
-                    <h1 class="font-display text-lg leading-tight sm:text-2xl">HKD Trịnh Văn Hùng</h1>
-                </div>
-            </div>
-            <div class="border-l border-[#6c8a77] pl-4 text-right">
-                <p class="text-[11px] font-semibold text-[#b9d0c2]">Chốt đơn trước</p>
-                <p class="font-display text-xl text-[#f4c95d]">18:00</p>
-            </div>
+    echo '<header class="topbar">
+        <a class="brand" href="/" aria-label="Trang chủ HKD Trịnh Văn Hùng">
+            <span class="brand-mark" aria-hidden="true">TVH</span>
+            <span><strong>Trịnh Văn Hùng</strong><small>Thực phẩm B2B</small></span>
+        </a>
+        <div class="topbar-account">
+            <span>' . e((string) ($_SESSION['user']['username'] ?? '')) . '</span>
+            <form method="post" action="/logout">
+                <button type="submit" class="logout-button">Đăng xuất</button>
+            </form>
         </div>
     </header>';
 }
 
+function renderWorkspaceRail(): void
+{
+    echo '<aside class="workspace-rail" aria-label="Điều hướng chính">
+        <p class="rail-label">KHÔNG GIAN LÀM VIỆC</p>
+        <nav>
+            <a class="nav-item" href="/"><span class="nav-icon" aria-hidden="true">01</span>Bảng tổng quan</a>
+            <a class="nav-item active" href="/" aria-current="page"><span class="nav-icon" aria-hidden="true">02</span>Đặt hàng</a>
+            <a class="nav-item" href="/orders"><span class="nav-icon" aria-hidden="true">03</span>Đơn đã gửi</a>
+        </nav>
+        <div class="rail-note">
+            <span>Ca nhận hàng hôm nay</span>
+            <strong>06:30 – 08:30</strong>
+        </div>
+    </aside>';
+}
+
 function renderProductCatalog(array $products): void
 {
-    echo '<section>
-        <div class="mb-5 border-b border-[#b9b7ad] pb-5">
-            <p class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#a54a33]">Danh mục hôm nay</p>
-            <h2 class="font-display text-3xl text-[#18392b] sm:text-4xl">Thực phẩm cho nhà ăn</h2>
-            <p class="mt-2 max-w-xl text-sm leading-6 text-[#687068]">Chọn sản phẩm cần đặt. Số lượng có thể điều chỉnh trong phiếu bên cạnh.</p>
+    echo '<section class="catalog">
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">Danh mục hôm nay</span>
+                <h2>Chọn thực phẩm</h2>
+            </div>
+            <span class="catalog-count">' . count($products) . ' mặt hàng</span>
         </div>
-        <div class="divide-y divide-[#c9c6ba] border-y border-[#c9c6ba]">';
+        <div class="product-list">';
 
     $itemNumber = 1;
     foreach ($products as $productId => $product) {
-        echo '<article class="group grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 py-4 sm:grid-cols-[54px_minmax(0,1fr)_auto] sm:gap-5 sm:py-5">
-            <span class="font-display text-2xl text-[#aaa99f]">' . str_pad((string) $itemNumber, 2, '0', STR_PAD_LEFT) . '</span>
-            <div>
-                <h3 class="text-base font-bold text-[#25352d] sm:text-lg">' . e($product['name']) . '</h3>
-                <p class="mt-1 text-sm text-[#777b73]">Đơn vị đặt hàng · ' . e($product['unit']) . '</p>
+        $price = isset($product['price']) ? (float) $product['price'] : 0;
+        echo '<article class="product-row">
+            <div class="product-monogram" aria-hidden="true">' . e(substr($product['name'], 0, 1)) . '</div>
+            <div class="product-copy">
+                <h3>' . e($product['name']) . '</h3>
+                <p>Đơn vị <strong>' . e($product['unit']) . '</strong> · <strong>' . number_format($price, 0, ',', '.') . ' đ</strong></p>
             </div>
             <button type="button" @click="addItem(' . (int) $productId . ')"
-                class="border border-[#315844] px-3 py-2 text-sm font-bold text-[#315844] transition hover:bg-[#315844] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#315844] focus:ring-offset-2 sm:px-4">+ Thêm</button>
+                class="add-button" :class="{ \'is-added\': cart.some(item => item.product_id === ' . (int) $productId . ') }">
+                <span aria-hidden="true" x-text="cart.some(item => item.product_id === ' . (int) $productId . ') ? \'✓\' : \'+\'"></span>
+                <span x-text="cart.some(item => item.product_id === ' . (int) $productId . ') ? \'Thêm tiếp\' : \'Thêm\'"></span>
+            </button>
         </article>';
         $itemNumber++;
     }
@@ -53,38 +72,48 @@ function renderProductCatalog(array $products): void
 
 function renderOrderForm(array $products): void
 {
-    echo '<aside class="border border-[#c9c6ba] bg-[#fffdf7] shadow-[8px_8px_0_#dcd8c9] lg:sticky lg:top-5">
+    $isCustomer = ($_SESSION['user']['role'] ?? '') === 'customer';
+    echo '<aside class="order-panel">
         <form @submit.prevent="submitOrder" novalidate>
-            <div class="border-b border-[#c9c6ba] bg-[#ecede1] p-5">
-                <div class="flex items-end justify-between gap-4">
+            <div class="order-panel-head">
+                <div class="order-panel-title">
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#69756b]">Phiếu số</p>
-                        <h2 class="mt-1 font-display text-2xl text-[#18392b]">Đơn đặt hàng</h2>
+                        <span class="eyebrow">Phiếu đặt hàng</span>
+                        <h2>Đơn mới</h2>
                     </div>
-                    <span class="border-b border-[#18392b] pb-1 text-sm font-bold text-[#18392b]" x-text="cart.length + \' mặt hàng\'"></span>
+                    <span class="item-count" x-text="cart.length + \' mặt hàng\'"></span>
                 </div>
-                <label for="company-id" class="mt-5 block text-sm font-bold text-[#445148]">Nhà nhận hàng</label>
-                <select id="company-id" x-model.number="companyId"
-                    class="mt-2 w-full border border-[#aeb2a7] bg-[#fffdf7] px-3 py-3 text-sm outline-none focus:border-[#315844] focus:ring-2 focus:ring-[#315844]/20">
+                <label for="company-id">Nhà nhận hàng</label>
+                ';
+    if ($isCustomer) {
+        echo '<div class="company-select company-fixed">Nhà ăn công ty ABC</div>
+                <input type="hidden" x-model.number="companyId" value="1">';
+    } else {
+        echo '<select id="company-id" x-model.number="companyId" class="company-select">
                     <option value="1">Nhà ăn công ty 1</option>
                     <option value="2">Nhà ăn công ty 2</option>
-                </select>
-            </div>
-            <div class="p-5">
-                <div class="mb-3 flex items-center justify-between">
-                    <h3 class="font-bold text-[#25352d]">Danh sách chọn</h3>
-                    <button type="button" @click="clearCart" class="text-xs font-bold text-[#777b73] underline decoration-[#777b73]/40 underline-offset-4 hover:text-[#b9442d]">Xóa phiếu</button>
+                </select>';
+    }
+    echo '</div>
+            <div class="cart-section">
+                <div class="cart-title-row">
+                    <h3>Danh sách chọn</h3>
+                    <button type="button" @click="clearCart" class="clear-button">Xóa phiếu</button>
                 </div>
-                <div class="space-y-3">';
+                <div class="cart-list">';
     renderOrderItemRow();
     echo '</div>
-                <div x-show="cart.length === 0" class="my-2 border border-dashed border-[#c3c4b9] px-4 py-9 text-center">
-                    <p class="font-display text-lg text-[#777b73]">Phiếu đang trống</p>
-                    <p class="mt-1 text-xs leading-5 text-[#999c94]">Chọn một sản phẩm ở danh mục để bắt đầu.</p>
+                <div x-show="cart.length === 0" class="empty-cart">
+                    <p>Phiếu đang trống</p>
+                    <span>Thêm sản phẩm từ danh mục bên trái.</span>
+                </div>
+                <div class="cart-total" x-show="cart.length > 0">
+                    <span>Tạm tính</span>
+                    <strong x-text="formatAmount(cartTotal())"></strong>
                 </div>
             </div>';
     renderAlertBox();
-    echo '<div class="border-t border-[#c9c6ba] bg-[#f7f4ea] p-5">';
+    echo '<div class="order-panel-action">';
     renderSubmitButton();
     echo '</div>
         </form>
@@ -134,6 +163,13 @@ function renderOrderFormScript(array $products): void
 
                 formatAmount(amount) {
                     return new Intl.NumberFormat(\'vi-VN\', { style: \'currency\', currency: \'VND\' }).format(Number(amount));
+                },
+
+                cartTotal() {
+                    return this.cart.reduce((total, item) => {
+                        const product = this.products[String(item.product_id)];
+                        return total + (Number(item.quantity) || 0) * Number(product?.price || 0);
+                    }, 0);
                 },
 
                 async submitOrder() {

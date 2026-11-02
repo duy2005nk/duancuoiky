@@ -52,3 +52,11 @@ CREATE INDEX idx_price_lookup ON price_list(company_id, product_id, valid_from D
 CREATE INDEX idx_order_company ON "order"(company_id);
 CREATE INDEX idx_order_status ON "order"(status);
 CREATE INDEX idx_order_detail_order ON order_detail(order_id);
+
+CREATE TABLE app_user (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'customer')),
+    company_id INTEGER REFERENCES company(id)
+);

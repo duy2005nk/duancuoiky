@@ -2,43 +2,27 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Controllers\OrderController;
-use App\Repositories\OrderRepository;
-use App\Repositories\PriceRepository;
-use App\Services\OrderService;
+use App\Application;
+
+session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
+session_start();
+
+require_once dirname(__DIR__) . '/config/database.php';
+if (file_exists(dirname(__DIR__) . '/vendor/autoload.php')) {
+    require_once dirname(__DIR__) . '/vendor/autoload.php';
+} else {
+    spl_autoload_register(static function (string $class): void {
+        $prefix = 'App\\';
+        if (!str_starts_with($class, $prefix)) {
+            return;
+        }
+        $file = dirname(__DIR__) . '/src/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
+        if (is_file($file)) {
+            require_once $file;
+        }
+    });
+}
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-
-if ($method === 'GET' && ($path === '/' || $path === '/orders')) {
-    require __DIR__ . '/order.php';
-    exit;
-}
-
-if ($method === 'POST' && $path === '/api/v1/orders') {
-    header('Content-Type: application/json; charset=utf-8');
-    require_once dirname(__DIR__) . '/config/database.php';
-    require_once dirname(__DIR__) . '/vendor/autoload.php';
-    $rawBody = file_get_contents('php://input');
-    $input = json_decode($rawBody ?: '{}', true);
-
-    if (!is_array($input)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Request body must be valid JSON.'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    $db = Database::connection();
-    $controller = new OrderController(
-        new OrderService(
-            new OrderRepository($db),
-            new PriceRepository($db)
-        )
-    );
-    $controller->create($input);
-    exit;
-}
-
-http_response_code(404);
-echo json_encode(['error' => 'Endpoint not found.'], JSON_UNESCAPED_UNICODE);
+(new Application())->handle($method, $path);
