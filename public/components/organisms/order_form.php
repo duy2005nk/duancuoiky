@@ -7,13 +7,17 @@ require_once __DIR__ . '/../molecules/alert_box.php';
 
 function renderPageHeader(): void
 {
-    echo '<header class="topbar">
+    echo '<header class="orders-header">
         <a class="brand" href="/" aria-label="Trang chủ HKD Trịnh Văn Hùng">
             <span class="brand-mark" aria-hidden="true">TVH</span>
             <span><strong>Trịnh Văn Hùng</strong><small>Thực phẩm B2B</small></span>
         </a>
-        <div class="topbar-account">
-            <span>' . e((string) ($_SESSION['user']['username'] ?? '')) . '</span>
+        <nav aria-label="Điều hướng khách hàng">
+            <a class="active" href="/" aria-current="page">Đặt hàng</a>
+            <a href="/orders">Đơn đã gửi</a>
+        </nav>
+        <div class="account-menu">
+            <strong>' . e((string) ($_SESSION['user']['username'] ?? '')) . '</strong>
             <form method="post" action="/logout">
                 <button type="submit" class="logout-button">Đăng xuất</button>
             </form>

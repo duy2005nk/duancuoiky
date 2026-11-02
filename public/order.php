@@ -21,12 +21,9 @@ $products = $products ?? [];
 </head>
 <?php renderOrderFormScript($products); ?>
 <body>
-<div class="app-shell" x-data="orderPage()">
+<main class="orders-page" x-data="orderPage()">
     <?php renderPageHeader(); ?>
-    <div class="workspace">
-        <?php renderWorkspaceRail(); ?>
-        <main class="sheet">
-            <div class="sheet-content">
+    <section class="orders-content order-content">
                 <div class="order-heading">
                     <div>
                         <nav class="breadcrumb" aria-label="Breadcrumb">Bán hàng <span>/</span> Phiếu đặt hàng mới</nav>
@@ -45,10 +42,8 @@ $products = $products ?? [];
             <?php renderProductCatalog($products); ?>
             <?php renderOrderForm($products); ?>
                 </div>
-            </div>
-        </main>
-    </div>
-</div>
+    </section>
+</main>
     <script>
         window.ORDER_PRODUCTS = <?= json_encode($products, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
     </script>
